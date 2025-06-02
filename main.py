@@ -1,7 +1,7 @@
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker # ticker 모듈 추가
+import matplotlib.ticker as ticker
 
 def main():
     st.set_page_config(layout="wide")
@@ -88,7 +88,6 @@ def main():
     ax.set_xlim(x_min_plot, x_max_plot) # X축 범위 설정
 
     # X축 눈금을 파이/4의 배수로 설정 및 라디안으로 표기
-    # 파이/4 간격으로 주요 눈금 설정
     major_locator = ticker.MultipleLocator(np.pi / 4)
     ax.xaxis.set_major_locator(major_locator)
 
@@ -99,7 +98,6 @@ def main():
         
         num = value / np.pi
         
-        # 작은 부동 소수점 오차를 처리하기 위해 반올림
         num_fraction = num * 4 
         round_num = round(num_fraction) 
         
@@ -131,12 +129,11 @@ def main():
     ax.xaxis.set_major_formatter(ticker.FuncFormatter(format_func))
 
     # X축 눈금 라벨 위치 조정
-    # `tick_bottom=False`는 아래쪽 눈금 표시를 없애고
-    # `labelbottom=True`는 아래쪽 라벨을 유지
-    # `pad`를 음수로 설정하여 라벨을 축선(y=0) 가까이로 이동
-    ax.tick_params(axis='x', direction='out', pad=-15,  # pad 값을 조정하여 라벨 위치 조절
-                   labelbottom=True,      # 아래쪽 라벨 표시
-                   tick_bottom=False)     # 아래쪽 눈금 자체는 표시 안 함
+    # direction 인자 제거. pad를 음수로 설정하여 라벨을 축선(y=0) 가까이로 이동
+    ax.tick_params(axis='x', pad=-15,  # pad 값을 조정하여 라벨 위치 조절
+                   labelbottom=True,      # 아래쪽 라벨 표시 (기본값)
+                   bottom=False)          # X축 아래쪽의 작은 눈금 선 자체를 제거 (tick_bottom 대신 bottom 사용)
+
 
     if function_type == "tan(x)":
         # 점근선 표시 (끊어진 선으로 표현)
