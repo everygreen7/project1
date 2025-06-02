@@ -87,7 +87,7 @@ def main():
     ax.set_ylim(-8, 8) # Y축 범위 -8~8로 변경
     ax.set_xlim(x_min_plot, x_max_plot) # X축 범위 설정
 
-    # X축 눈금을 파이/4의 배수로 설정 및 라디안으로 표기
+    # X축 눈금을 파이/4의 배수로 설정
     major_locator = ticker.MultipleLocator(np.pi / 4)
     ax.xaxis.set_major_locator(major_locator)
 
@@ -126,15 +126,94 @@ def main():
                 else:
                     return r"$\frac{{{}}}{{{}}}\pi$".format(numerator, denominator)
 
-    ax.xaxis.set_major_formatter(ticker.FuncFormatter(format_func))
+    # X축 라벨을 위한 빈 눈금 설정 (라벨 위치는 따로 조정)
+    # 기존 tick_params 관련 오류 발생 부분을 제거하거나 기본값으로 둡니다.
+    # 라벨을 수동으로 위치시키므로, 기본 tick_params는 최소한으로만 설정합니다.
+    ax.tick_params(axis='x', which='both', bottom=False, labelbottom=True) # 아래쪽 눈금 숨기고 라벨은 유지
+
+    # X축 눈금 위치와 라벨 가져오기
+    # ax.get_xticks()는 숫자 값, ax.get_xticklabels()는 텍스트 객체
+    ticks = ax.get_xticks()
+    labels = [format_func(t, i) for i, t in enumerate(ticks)] # 라벨 포맷터 직접 적용
 
     # X축 눈금 라벨 위치 조정
-    # direction 인자 제거. pad를 음수로 설정하여 라벨을 축선(y=0) 가까이로 이동
-    ax.tick_params(axis='x', pad=-15,  # pad 값을 조정하여 라벨 위치 조절
-                   labelbottom=True,      # 아래쪽 라벨 표시 (기본값)
-                   bottom=False)          # X축 아래쪽의 작은 눈금 선 자체를 제거 (tick_bottom 대신 bottom 사용)
+    # 각 라벨 객체의 y 좌표를 변경합니다.
+    # 이 부분은 그래프의 크기, 폰트 크기 등에 따라 조정이 필요할 수 있습니다.
+    # 텍스트 위치를 y=0.0에 상대적으로 조정하기 위해 transform을 사용합니다.
+    # ax.transAxes는 축의 좌표계를 의미하며, y=0.0은 축의 가장 아래를 나타냅니다.
+    # `transform=ax.get_xaxis_transform()`은 데이터 좌표가 아닌 축의 좌표계를 사용하여 라벨 위치를 지정할 때 유용합니다.
+    # 이 경우 `ax.xaxis.set_ticklabels(labels, y=y_position)` 형태로 직접 y 위치를 지정할 수 있습니다.
+    
+    # 1. 먼저 눈금 라벨을 설정합니다.
+    ax.set_xticks(ticks) # 기존 눈금 위치 재설정
+    ax.set_xticklabels(labels) # 포맷팅된 라벨 설정
 
+    # 2. 각 라벨의 Y 위치를 개별적으로 조정합니다.
+    # 이 값은 그래프의 Y축 범위에 따라 0.0 ~ 1.0 (축의 아래에서 위) 사이의 값입니다.
+    # -0.05는 X축 (y=0) 바로 위가 아니라, 그래프의 가장 아래쪽에서 약간 위로 올라오는 위치입니다.
+    # Y=0에 정확히 맞추려면, Y축 데이터 좌표로 변환해야 할 수 있습니다.
+    # 더 좋은 방법은 `y=ax.transData.transform((0,0))[1]`을 사용하여 y=0의 화면 좌표를 얻는 것입니다.
+    
+    # 간단하게, `y` 인자를 사용하여 라벨의 수직 위치를 조정합니다.
+    # 이 `y` 값은 0.0 (축 바닥) ~ 1.0 (축 상단) 사이의 비율입니다.
+    # 0.05는 X축의 바닥에서 5% 정도 위에 표시됩니다.
+    # 만약 Y=0에 정확히 맞추고 싶다면, `ax.transData.transform((0,0))`을 사용하여 데이터 좌표 0의 화면 좌표를 구해야 합니다.
+    # 그러나 이것은 더 복잡해지므로, `pad` 대신 `y`를 사용한 상대적인 위치 조정으로 대체하겠습니다.
+    
+    # Matplotlib 3.8+에서 라벨의 Y 위치를 직접 조절하는 방법
+    # `y` 인자는 Axes의 Y좌표(0:bottom, 1:top) 기준으로 라벨의 중심을 배치합니다.
+    # y=0 라인에 라벨을 근접하게 배치하려면, 약간의 시행착오가 필요합니다.
+    # 여기서 `0`은 Axes의 하단, `1`은 상단을 의미합니다.
+    # 0에 가까운 작은 양수 값 (예: -0.01)을 사용하면 됩니다.
+    # ax.tick_params(axis='x', bottom=False)는 그대로 두고,
+    # ax.set_xticklabels(...)에서 y 위치를 조정하는 방법을 사용합니다.
 
+    # 텍스트 라벨 객체 가져오기
+    xticks_labels = ax.get_xticklabels()
+
+    # 라벨의 y 위치를 조정합니다.
+    # 이 값을 조절하여 y=0 선에 얼마나 가깝게 붙일지 결정합니다.
+    # (예: 0.0은 축의 가장 아래, 0.5는 축의 중앙, 1.0은 축의 가장 위)
+    # y=0 선 근처로 옮기려면, 이 값을 -0.01 ~ 0.03 사이에서 조정해 보세요.
+    # 0.01은 X축 라벨이 X축 라인보다 약간 위에 오는 경우입니다.
+    # 현재 Y축 범위가 -8~8이므로, X축 라인 (y=0)의 Axes 좌표는 0.5입니다.
+    # 그래서 라벨을 0.5 근처로 옮겨야 합니다.
+    # `va='center'`를 추가하여 텍스트의 수직 정렬을 중심으로 맞춥니다.
+
+    # 텍스트 라벨을 Y=0 근처로 이동
+    # 이 방법은 Matplotlib의 특정 버전에서 호환되지 않을 수 있는 기존 `pad` 문제를 회피합니다.
+    # 라벨의 y 위치를 직접 설정합니다.
+    # 0.5는 현재 Axes의 Y축에서 y=0에 해당하는 위치 (range -8 to 8)
+    # 오프셋 값 (예: 0.02)을 빼거나 더해서 미세 조정합니다.
+    # 0.02 (Axes의 상대적인 높이)는 텍스트가 Y=0 라인보다 약간 위에 위치하도록 합니다.
+    # 폰트 크기에 따라 이 값은 조정이 필요할 수 있습니다.
+    
+    # 1. 눈금 라벨의 텍스트 객체를 가져옵니다.
+    tick_labels = ax.get_xticklabels()
+    
+    # 2. 각 텍스트 객체의 위치를 조정합니다.
+    # y=0 데이터 포인트의 Axes 좌표를 계산합니다.
+    # (data_y - ax_ylim_min) / (ax_ylim_max - ax_ylim_min)
+    # (0 - (-8)) / (8 - (-8)) = 8 / 16 = 0.5
+    y_position_in_axes = (0 - ax.get_ylim()[0]) / (ax.get_ylim()[1] - ax.get_ylim()[0])
+    
+    # 라벨을 y=0 라인보다 약간 위로 올리려면 y_position_in_axes에 작은 값을 더합니다.
+    # 이 값은 라벨의 폰트 크기, 패딩에 따라 달라질 수 있습니다.
+    # 0.02는 Axes 높이의 2%를 의미합니다.
+    label_y_offset = 0.02 # Y축 라벨을 위로 올릴 오프셋 (Axes 단위)
+    
+    for label in tick_labels:
+        # 텍스트의 y 위치를 설정하고, 수직 정렬을 가운데로 맞춥니다.
+        # transform=ax.transAxes는 y_position_in_axes가 Axes 좌표계임을 명시합니다.
+        # 기존 텍스트 객체의 위치를 유지하고, y 위치만 조정합니다.
+        x_val = label.get_position()[0] # 원래 x 위치는 유지
+        label.set_position((x_val, y_position_in_axes + label_y_offset))
+        label.set_verticalalignment('center') # 수직 정렬
+
+    # X축의 눈금(tick marks) 자체를 숨깁니다.
+    # 라벨은 `labelbottom=True`로 인해 여전히 표시됩니다.
+    ax.tick_params(axis='x', which='both', bottom=False)
+    
     if function_type == "tan(x)":
         # 점근선 표시 (끊어진 선으로 표현)
         cos_val = np.cos(frequency * x + x_shift)
