@@ -49,12 +49,13 @@ QUIZ_QUESTIONS = [
         "question": r"$\tan \theta = \frac{\sin \theta}{\cos \theta}$ 는 어떤 관계를 나타내나요?",
         "answer": r"탄젠트의 정의",
         "options": [r"탄젠트의 정의", r"사인 함수의 정의", r"코사인 함수의 정의", r"피타고라스 정리"]
-    },
-    {
-        "question": r"각도 $A$에 대해 $\sec A$는 무엇의 역수인가요?",
-        "answer": r"$\cos A$",
-        "options": [r"$\sin A$", r"$\cos A$", r"$\tan A$", r"$\cot A$"]
     }
+    # 삭제된 문제:
+    # {
+    #     "question": r"각도 $A$에 대해 $\sec A$는 무엇의 역수인가요?",
+    #     "answer": r"$\cos A$",
+    #     "options": [r"$\sin A$", r"$\cos A$", r"$\tan A$", r"$\cot A$"]
+    # }
 ]
 
 # --- 2. Streamlit 앱 설정 ---
