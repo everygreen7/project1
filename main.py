@@ -10,7 +10,8 @@ def main():
     # 사이드바 입력 설정
     st.sidebar.header("그래프 설정")
 
-    function_type = st.sidebar.selectbox(
+    # st.selectbox 대신 st.radio를 사용하여 버튼 형태로 변경
+    function_type = st.sidebar.radio(
         "함수 선택",
         ("sin(x)", "cos(x)", "tan(x)")
     )
@@ -18,7 +19,7 @@ def main():
     amplitude = st.sidebar.slider(
         "진폭 (A)",
         min_value=0.0,
-        max_value=4.0,  # 진폭 변화 범위 0~4로 변경
+        max_value=4.0,
         value=1.0,
         step=0.1
     )
@@ -85,27 +86,17 @@ def main():
 
     if function_type == "tan(x)":
         # 점근선 표시 (끊어진 선으로 표현)
-        # 0이 되는 지점을 정확히 찾기 위해 np.isclose 사용
         cos_val = np.cos(frequency * x + x_shift)
         
-        # x_val 값 계산을 위해 frequency * x + x_shift 값을 사용
-        tan_x_values = frequency * x + x_shift 
-        
-        # 코사인 값이 0에 가까워지는 지점을 찾아 점근선 그림
-        # k * pi/2 형태의 점근선 중 (2k+1) * pi/2 형태를 찾음
-        # 즉, cos(angle)이 0이 되는 지점
         asymptote_indices = np.where(np.isclose(cos_val, 0, atol=tolerance))[0]
         
-        # 중복된 점근선 그리기 방지 및 x축 범위 내에서만 그리기
         drawn_asymptotes = set()
         for i in asymptote_indices:
             asymptote_x = x[i]
-            # 이미 그린 점근선이거나 범위 밖이면 건너뛰기
             if round(asymptote_x, 2) in drawn_asymptotes or not (-2 * np.pi <= asymptote_x <= 2 * np.pi):
                 continue
             
-            # y축 범위 내에서 점선 그리기
-            ax.plot([asymptote_x, asymptote_x], [-8, 8], color='red', linestyle='--', linewidth=1, label='점근선' if not drawn_asymptotes else "")
+            ax.plot([asymptote_x, asymptote_x], [-8, 8], color='red', linestyle='--', linewidth=1)
             drawn_asymptotes.add(round(asymptote_x, 2))
 
     st.pyplot(fig)
