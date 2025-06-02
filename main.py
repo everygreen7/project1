@@ -1,85 +1,137 @@
 import streamlit as st
-import openai
-import os # API 키를 환경 변수에서 가져오기 위해 필요
+import random
 
-# --- 1. OpenAI API 키 설정 (보안이 중요!) ---
-# 방법 1: Streamlit secrets 사용 (권장)
-# .streamlit/secrets.toml 파일에 다음 내용을 추가합니다:
-# OPENAI_API_KEY = "YOUR_OPENAI_API_KEY"
-try:
-    openai.api_key = st.secrets["OPENAI_API_KEY"]
-except KeyError:
-    st.error("OpenAI API 키가 설정되지 않았습니다. `.streamlit/secrets.toml` 파일을 확인해주세요.")
-    st.stop() # 키가 없으면 앱 실행 중지
+# --- 1. 퀴즈 문제 데이터 정의 ---
+# 문제, 정답, 오답 보기를 딕셔너리 리스트로 정의합니다.
+# 보기 순서는 매번 랜덤하게 섞이도록 할 것입니다.
+QUIZ_QUESTIONS = [
+    {
+        "question": "sin(30°)의 값은 무엇인가요?",
+        "answer": "1/2",
+        "options": ["1/2", "루트3/2", "루트2/2", "0"]
+    },
+    {
+        "question": "cos(60°)의 값은 무엇인가요?",
+        "answer": "1/2",
+        "options": ["1/2", "루트3/2", "루트2/2", "1"]
+    },
+    {
+        "question": "tan(45°)의 값은 무엇인가요?",
+        "answer": "1",
+        "options": ["1", "0", "정의되지 않음", "루트3"]
+    },
+    {
+        "question": "다음 중 $\\sin^2\\theta + \\cos^2\\theta$ 와 항상 같은 값은 무엇인가요?",
+        "answer": "1",
+        "options": ["1", "0", "tan^2θ", "sec^2θ"]
+    },
+    {
+        "question": "직각삼각형에서 빗변이 5이고 높이(대변)가 3일 때, 사인(sin) 값은 무엇인가요?",
+        "answer": "3/5",
+        "options": ["3/5", "4/5", "3/4", "5/3"]
+    },
+    {
+        "question": "사인 함수의 주기는 얼마인가요?",
+        "answer": "2π",
+        "options": ["2π", "π", "π/2", "4π"]
+    },
+    {
+        "question": "탄젠트 함수가 정의되지 않는 각도는 무엇인가요? (0° ~ 360° 사이)",
+        "answer": "90°",
+        "options": ["90°", "180°", "270°", "0°"]
+    }
+]
 
-# 방법 2: 환경 변수 사용 (배포 시 유용)
-# 터미널에서 export OPENAI_API_KEY="YOUR_OPENAI_API_KEY"
-# 또는 .env 파일 사용 후 `python-dotenv` 라이브러리로 로드
-# openai.api_key = os.getenv("OPENAI_API_KEY")
-# if not openai.api_key:
-#     st.error("OpenAI API 키가 환경 변수에 설정되지 않았습니다.")
-#     st.stop()
+# --- 2. Streamlit 앱 설정 ---
+st.title("삼각함수 퀴즈")
+
+# 퀴즈 상태 초기화
+if "quiz_started" not in st.session_state:
+    st.session_state.quiz_started = False
+if "current_question_index" not in st.session_state:
+    st.session_state.current_question_index = 0
+if "score" not in st.session_state:
+    st.session_state.score = 0
+if "quiz_questions_shuffled" not in st.session_state:
+    st.session_state.quiz_questions_shuffled = []
+if "show_feedback" not in st.session_state:
+    st.session_state.show_feedback = False
+if "user_answer" not in st.session_state:
+    st.session_state.user_answer = None
+
+# 퀴즈 시작 함수
+def start_quiz():
+    st.session_state.quiz_started = True
+    st.session_state.current_question_index = 0
+    st.session_state.score = 0
+    st.session_state.quiz_questions_shuffled = random.sample(QUIZ_QUESTIONS, len(QUIZ_QUESTIONS)) # 문제 순서 섞기
+    st.session_state.show_feedback = False
+    st.session_state.user_answer = None
+
+# 다음 문제로 이동 함수
+def next_question():
+    # 정답 피드백 초기화
+    st.session_state.show_feedback = False
+    st.session_state.user_answer = None
+
+    if st.session_state.current_question_index < len(st.session_state.quiz_questions_shuffled) - 1:
+        st.session_state.current_question_index += 1
+    else:
+        # 모든 문제를 다 풀었을 경우 퀴즈 종료
+        st.session_state.quiz_started = False
+        st.session_state.current_question_index = 0 # 인덱스 초기화
+        st.rerun() # 퀴즈 종료 화면으로 리로드
+
+# 답변 제출 함수
+def submit_answer(selected_option):
+    current_q = st.session_state.quiz_questions_shuffled[st.session_state.current_question_index]
+    st.session_state.user_answer = selected_option
+    st.session_state.show_feedback = True
+
+    if selected_option == current_q["answer"]:
+        st.session_state.score += 1
+        st.success("정답입니다! 🎉")
+    else:
+        st.error(f"오답입니다. 정답은 '{current_q['answer']}' 입니다. 😢")
+
+# --- 3. 퀴즈 UI 렌더링 ---
+if not st.session_state.quiz_started:
+    st.info("삼각함수 지식을 테스트해 보세요!")
+    st.button("퀴즈 시작", on_click=start_quiz)
+
+    # 퀴즈가 끝나고 다시 시작할 때 점수 표시
+    if st.session_state.current_question_index == 0 and st.session_state.score > 0:
+        st.success(f"퀴즈가 종료되었습니다! 총 {len(QUIZ_QUESTIONS)}문제 중 {st.session_state.score}개를 맞혔습니다. 훌륭해요!")
+        st.session_state.score = 0 # 점수 초기화
+        st.session_state.quiz_questions_shuffled = [] # 문제 목록 초기화
 
 
-# --- 2. Streamlit UI 설정 ---
-st.title("삼각함수 LLM 챗봇 (OpenAI GPT)")
+else:
+    current_q_index = st.session_state.current_question_index
+    current_q = st.session_state.quiz_questions_shuffled[current_q_index]
 
-# 대화 기록 저장
-if "messages" not in st.session_state:
-    st.session_state.messages = [
-        {"role": "system", "content": "당신은 삼각함수 전문가 챗봇입니다. 삼각함수에 대한 질문에 친절하고 정확하게 답변해주세요. 수학 공식은 LaTeX 형식으로 표현해주세요. 예를 들어, sin^2θ + cos^2θ = 1 은 $\\sin^2\\theta + \\cos^2\\theta = 1$ 로 표현하세요."}
-    ]
-    # 사용자에게 보여줄 초기 메시지 (assistant 역할로)
-    st.session_state.messages.append({"role": "assistant", "content": "안녕하세요! 삼각함수에 대해 무엇이든 물어보세요."})
+    st.subheader(f"문제 {current_q_index + 1} / {len(QUIZ_QUESTIONS)}")
+    st.markdown(f"**{current_q['question']}**")
 
-# 대화 기록 표시
-for message in st.session_state.messages:
-    # 'system' 역할의 메시지는 화면에 표시하지 않습니다.
-    if message["role"] != "system":
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+    # 보기를 섞어서 보여줍니다.
+    options_shuffled = random.sample(current_q["options"], len(current_q["options"]))
 
-# --- 3. 챗봇 응답 로직 (OpenAI API 호출) ---
-def get_openai_response(user_prompt):
-    # 이전 대화 기록과 현재 사용자 프롬프트를 함께 전달
-    # st.session_state.messages에는 system 프롬프트가 포함되어 있습니다.
-    response = openai.chat.completions.create(
-        model="gpt-4o",  # 또는 "gpt-3.5-turbo" 등 사용 가능한 모델
-        messages=st.session_state.messages,
-        temperature=0.7, # 창의성 조절 (0.0은 보수적, 1.0은 창의적)
-        stream=True # 실시간 스트리밍 응답 활성화 (선택 사항, 사용자 경험 개선)
+    # 라디오 버튼으로 보기 표시
+    selected_option = st.radio(
+        "정답을 선택하세요:",
+        options_shuffled,
+        key=f"question_{current_q_index}" # 각 문제마다 고유한 키 부여
     )
-    
-    # 스트리밍 응답 처리
-    full_response = ""
-    message_placeholder = st.empty() # 응답이 표시될 빈 공간 생성
-    for chunk in response:
-        if chunk.choices[0].delta.content is not None:
-            full_response += chunk.choices[0].delta.content
-            message_placeholder.markdown(full_response + "▌") # 커서 효과
 
-    message_placeholder.markdown(full_response) # 최종 응답 표시
-    return full_response
+    # 정답 제출 버튼
+    if not st.session_state.show_feedback:
+        st.button("정답 확인", on_click=submit_answer, args=(selected_option,))
+    else:
+        # 피드백이 보여지고 나면 다음 문제 버튼
+        if st.session_state.current_question_index < len(st.session_state.quiz_questions_shuffled) - 1:
+            st.button("다음 문제", on_click=next_question)
+        else:
+            st.button("퀴즈 종료", on_click=next_question) # 마지막 문제 후 퀴즈 종료 버튼
 
-# 사용자 입력 처리
-if prompt := st.chat_input("삼각함수에 대해 무엇이 궁금하신가요?"):
-    # 사용자 메시지를 대화 기록에 추가
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
-
-    # 챗봇 응답 생성 및 표시
-    with st.chat_message("assistant"):
-        # 스피너 표시
-        with st.spinner("생각 중..."):
-            try:
-                ai_response = get_openai_response(prompt)
-                st.session_state.messages.append({"role": "assistant", "content": ai_response})
-            except openai.APIError as e:
-                error_message = f"OpenAI API 호출 중 오류가 발생했습니다: {e}"
-                st.error(error_message)
-                st.session_state.messages.append({"role": "assistant", "content": error_message})
-            except Exception as e:
-                error_message = f"예상치 못한 오류가 발생했습니다: {e}"
-                st.error(error_message)
-                st.session_state.messages.append({"role": "assistant", "content": error_message})
+    st.markdown(f"---")
+    st.write(f"현재 점수: {st.session_state.score} / {current_q_index + 1}")
