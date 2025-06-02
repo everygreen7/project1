@@ -140,10 +140,11 @@ QUIZ_QUESTIONS = [
         "answer": r"$1$",
         "options": [r"$1$", r"$0$", r"$-1$", r"$2$"]
     },
+    # 여기에 새로운 문제 추가
     {
-        "question": r"$\tan \theta = \frac{\sin \theta}{\cos \theta}$ 는 어떤 관계를 나타내나요?",
-        "answer": r"탄젠트의 정의",
-        "options": [r"탄젠트의 정의", r"사인 함수의 정의", r"코사인 함수의 정의", r"피타고라스 정리"]
+        "question": r"사인 함수의 최솟값은 얼마인가요?",
+        "answer": r"$-1$",
+        "options": [r"$-1$", r"$0$", r"$1$", r"$-2$"]
     }
 ]
 
@@ -228,7 +229,7 @@ else:
     current_q = st.session_state.quiz_questions_shuffled[current_q_index]
 
     st.subheader(f"문제 {current_q_index + 1} / {len(QUIZ_QUESTIONS)} 🧐")
-    st.markdown(r"### " + current_q["question"]) # 문제 텍스트도 중앙 정렬과 크기 조정을 위해 h3에 넣음
+    st.markdown(r"### " + current_q["question"])
 
     options_to_display = st.session_state.current_options_shuffled
 
