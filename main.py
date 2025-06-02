@@ -6,54 +6,54 @@ import random
 # 보기 순서는 매번 랜덤하게 섞이도록 할 것입니다.
 QUIZ_QUESTIONS = [
     {
-        "question": "$\\sin(30^\\circ)$의 값은 무엇인가요?", # LaTeX 적용
-        "answer": "1/2",
-        "options": ["1/2", "루트3/2", "루트2/2", "0"]
+        "question": r"$\cos(60^\circ)$의 값은 무엇인가요?", # 질문에 LaTeX 적용
+        "answer": r"$1/2$",
+        "options": [r"$1/2$", r"$\sqrt{3}/2$", r"$\sqrt{2}/2$", r"$0$"] # 보기에 LaTeX 적용
     },
     {
-        "question": "$\\cos(60^\\circ)$의 값은 무엇인가요?", # LaTeX 적용
-        "answer": "1/2",
-        "options": ["1/2", "루트3/2", "루트2/2", "1"]
+        "question": r"$\sin(30^\circ)$의 값은 무엇인가요?",
+        "answer": r"$1/2$",
+        "options": [r"$1/2$", r"$\sqrt{3}/2$", r"$\sqrt{2}/2$", r"$0$"]
     },
     {
-        "question": "$\\tan(45^\\circ)$의 값은 무엇인가요?", # LaTeX 적용
-        "answer": "1",
-        "options": ["1", "0", "정의되지 않음", "루트3"]
+        "question": r"$\tan(45^\circ)$의 값은 무엇인가요?",
+        "answer": r"$1$",
+        "options": [r"$1$", r"$0$", r"정의되지 않음", r"$\sqrt{3}$"]
     },
     {
-        "question": "다음 중 $\\sin^2\\theta + \\cos^2\\theta$ 와 항상 같은 값은 무엇인가요?", # LaTeX 적용
-        "answer": "1",
-        "options": ["1", "0", "tan^2θ", "sec^2θ"]
+        "question": r"다음 중 $\sin^2\theta + \cos^2\theta$ 와 항상 같은 값은 무엇인가요?",
+        "answer": r"$1$",
+        "options": [r"$1$", r"$0$", r"$\tan^2\theta$", r"$\sec^2\theta$"]
     },
     {
-        "question": "직각삼각형에서 빗변이 5이고 높이(대변)가 3일 때, $\\sin$ 값은 무엇인가요?", # LaTeX 적용
-        "answer": "3/5",
-        "options": ["3/5", "4/5", "3/4", "5/3"]
+        "question": r"직각삼각형에서 빗변이 5이고 높이(대변)가 3일 때, $\sin$ 값은 무엇인가요?",
+        "answer": r"$3/5$",
+        "options": [r"$3/5$", r"$4/5$", r"$3/4$", r"$5/3$"]
     },
     {
-        "question": "사인 함수의 주기는 얼마인가요?",
-        "answer": "2π",
-        "options": ["2π", "π", "π/2", "4π"]
+        "question": r"사인 함수의 주기는 얼마인가요?",
+        "answer": r"$2\pi$",
+        "options": [r"$2\pi$", r"$\pi$", r"$\pi/2$", r"$4\pi$"]
     },
     {
-        "question": "탄젠트 함수가 정의되지 않는 각도는 무엇인가요? ($0^\\circ$ ~ $360^\\circ$ 사이)", # LaTeX 적용
-        "answer": "90°",
-        "options": ["90°", "180°", "270°", "0°"]
+        "question": r"탄젠트 함수가 정의되지 않는 $0^\circ$ ~ $360^\circ$ 사이의 각도는 무엇인가요?",
+        "answer": r"$90^\circ$",
+        "options": [r"$90^\circ$", r"$180^\circ$", r"$270^\circ$", r"$0^\circ$"]
     },
     {
-        "question": "$y = \\sin(x)$ 그래프의 최댓값은 무엇인가요?",
-        "answer": "1",
-        "options": ["1", "0", "-1", "2"]
+        "question": r"$y = \sin(x)$ 그래프의 최댓값은 무엇인가요?",
+        "answer": r"$1$",
+        "options": [r"$1$", r"$0$", r"$-1$", r"$2$"]
     },
     {
-        "question": "$\\tan \\theta = \\frac{\\sin \\theta}{\\cos \\theta}$ 는 어떤 관계를 나타내나요?",
-        "answer": "탄젠트의 정의",
-        "options": ["탄젠트의 정의", "사인 함수의 정의", "코사인 함수의 정의", "피타고라스 정리"]
+        "question": r"$\tan \theta = \frac{\sin \theta}{\cos \theta}$ 는 어떤 관계를 나타내나요?",
+        "answer": r"탄젠트의 정의",
+        "options": [r"탄젠트의 정의", r"사인 함수의 정의", r"코사인 함수의 정의", r"피타고라스 정리"]
     },
     {
-        "question": "각도 $A$에 대해 $\\sec A$는 무엇의 역수인가요?",
-        "answer": "cos A",
-        "options": ["sin A", "cos A", "tan A", "cot A"]
+        "question": r"각도 $A$에 대해 $\sec A$는 무엇의 역수인가요?",
+        "answer": r"$\cos A$",
+        "options": [r"$\sin A$", r"$\cos A$", r"$\tan A$", r"$\cot A$"]
     }
 ]
 
@@ -116,6 +116,8 @@ def submit_answer(selected_option):
     st.session_state.user_answer = selected_option
     st.session_state.show_feedback = True
 
+    # 'selected_option'과 'current_q["answer"]' 모두 LaTeX 문자열이므로
+    # 비교 시에도 LaTeX 문자열 그대로 비교해야 합니다.
     if selected_option == current_q["answer"]:
         st.session_state.score += 1
         st.success("정답입니다! 🎉")
@@ -147,10 +149,11 @@ else:
     # 보기를 섞어서 보여줍니다.
     options_to_display = st.session_state.current_options_shuffled
 
-    # 라디오 버튼으로 보기 표시
+    # st.radio는 내부적으로 마크다운을 렌더링할 수 있습니다.
+    # 따라서 LaTeX 문자열을 직접 전달하면 됩니다.
     selected_option = st.radio(
         "정답을 선택하세요:",
-        options_to_display,
+        options_to_display, # 이미 LaTeX가 적용된 문자열 리스트
         index=options_to_display.index(st.session_state.user_answer) if st.session_state.user_answer in options_to_display else 0,
         key=f"question_radio_{current_q_index}"
     )
