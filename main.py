@@ -18,7 +18,7 @@ def main():
     amplitude = st.sidebar.slider(
         "진폭 (A)",
         min_value=0.0,
-        max_value=5.0,
+        max_value=4.0,  # 진폭 변화 범위 0~4로 변경
         value=1.0,
         step=0.1
     )
@@ -77,20 +77,36 @@ def main():
     ax.set_ylabel("Y축")
     ax.set_title(f"{function_type} 그래프")
     ax.grid(True)
-    ax.axhline(0, color='black', linewidth=0.8) # x축
+    ax.axhline(0, color='black', linewidth=1.5) # x축 (y=0에 표현)
     ax.axvline(0, color='black', linewidth=0.8) # y축
     ax.spines['top'].set_visible(False)    # 위쪽 테두리 제거
     ax.spines['right'].set_visible(False)  # 오른쪽 테두리 제거
-    ax.set_ylim(-5, 5) # 고정된 Y축 범위
+    ax.set_ylim(-8, 8) # Y축 범위 -8~8로 변경
 
     if function_type == "tan(x)":
         # 점근선 표시 (끊어진 선으로 표현)
+        # 0이 되는 지점을 정확히 찾기 위해 np.isclose 사용
         cos_val = np.cos(frequency * x + x_shift)
-        tan_x = frequency * x + x_shift
-        for i in np.where(np.diff(np.sign(cos_val))):
-            x_val = (tan_x [i] + tan_x [i+1]) / 2
-            ax.plot([x_val, x_val], [-5, 5], color='red', linestyle='--', linewidth=1)
-
+        
+        # x_val 값 계산을 위해 frequency * x + x_shift 값을 사용
+        tan_x_values = frequency * x + x_shift 
+        
+        # 코사인 값이 0에 가까워지는 지점을 찾아 점근선 그림
+        # k * pi/2 형태의 점근선 중 (2k+1) * pi/2 형태를 찾음
+        # 즉, cos(angle)이 0이 되는 지점
+        asymptote_indices = np.where(np.isclose(cos_val, 0, atol=tolerance))[0]
+        
+        # 중복된 점근선 그리기 방지 및 x축 범위 내에서만 그리기
+        drawn_asymptotes = set()
+        for i in asymptote_indices:
+            asymptote_x = x[i]
+            # 이미 그린 점근선이거나 범위 밖이면 건너뛰기
+            if round(asymptote_x, 2) in drawn_asymptotes or not (-2 * np.pi <= asymptote_x <= 2 * np.pi):
+                continue
+            
+            # y축 범위 내에서 점선 그리기
+            ax.plot([asymptote_x, asymptote_x], [-8, 8], color='red', linestyle='--', linewidth=1, label='점근선' if not drawn_asymptotes else "")
+            drawn_asymptotes.add(round(asymptote_x, 2))
 
     st.pyplot(fig)
 
@@ -100,7 +116,7 @@ def main():
     왼쪽 사이드바에서 다음 파라미터들을 조정하여 그래프의 모양을 변경할 수 있습니다:
 
     * **함수 선택**: `sin(x)`, `cos(x)`, `tan(x)` 중 하나를 선택합니다.
-    * **진폭 (A)**: 그래프의 높낮이를 조절합니다. (범위: 0 ~ 5)
+    * **진폭 (A)**: 그래프의 높낮이를 조절합니다. (범위: 0 ~ 4)
     * **주파수 (B)**: 파동의 밀도를 조절합니다. 값이 클수록 파동이 더 조밀해집니다.
     * **X축 이동 (C)**: 그래프를 좌우로 이동시킵니다. 양수 값은 오른쪽으로 이동, 음수 값은 왼쪽으로 이동합니다.
     * **Y축 이동 (D)**: 그래프를 상하로 이동시킵니다.
