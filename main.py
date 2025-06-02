@@ -1,7 +1,7 @@
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
+import matplotlib.ticker as ticker # ticker 모듈 추가
 
 def main():
     st.set_page_config(layout="wide")
@@ -87,7 +87,8 @@ def main():
     ax.set_ylim(-8, 8) # Y축 범위 -8~8로 변경
     ax.set_xlim(x_min_plot, x_max_plot) # X축 범위 설정
 
-    # X축 눈금을 파이/4의 배수로 설정
+    # X축 눈금을 파이/4의 배수로 설정 및 라디안으로 표기
+    # 파이/4 간격으로 주요 눈금 설정
     major_locator = ticker.MultipleLocator(np.pi / 4)
     ax.xaxis.set_major_locator(major_locator)
 
@@ -98,6 +99,7 @@ def main():
         
         num = value / np.pi
         
+        # 작은 부동 소수점 오차를 처리하기 위해 반올림
         num_fraction = num * 4 
         round_num = round(num_fraction) 
         
@@ -129,20 +131,12 @@ def main():
     ax.xaxis.set_major_formatter(ticker.FuncFormatter(format_func))
 
     # X축 눈금 라벨 위치 조정
-    ax.tick_params(axis='x', which='both', bottom=False, labelbottom=True)
+    # `pad` 값을 음수로 설정하여 라벨 위치 조절 (이전 오류 발생 지점이었음)
+    # 현재 Matplotlib 버전에서 이 부분이 문제가 된다면 다른 방법을 찾아야 합니다.
+    ax.tick_params(axis='x', pad=-15,  # pad 값을 조정하여 라벨 위치 조절
+                   labelbottom=True,      # 아래쪽 라벨 표시
+                   bottom=False)          # X축 아래쪽의 작은 눈금 선 자체를 제거
 
-    # 텍스트 라벨 객체 가져오기
-    tick_labels = ax.get_xticklabels()
-
-    # 라벨의 y 위치를 데이터 좌표계 기준으로 조정
-    # y=0 바로 아래에 위치하도록 약간의 음수 오프셋을 적용합니다.
-    # 이 값은 폰트 크기 및 Matplotlib 스타일에 따라 조정이 필요할 수 있습니다.
-    y_offset_data = -0.3 # 데이터 좌표 단위로 아래로 이동 (조정 필요)
-
-    for label in tick_labels:
-        x_val = label.get_position()[0]
-        label.set_position((x_val, y_offset_data))
-        label.set_verticalalignment('top') # 텍스트의 상단이 y=0에 닿도록
 
     if function_type == "tan(x)":
         # 점근선 표시 (끊어진 선으로 표현)
@@ -152,7 +146,7 @@ def main():
         
         drawn_asymptotes = set()
         for i in asymptote_indices:
-            asymptote_x = x(i)
+            asymptote_x = x[i] # 이 부분에서 x(i) -> x[i]로 수정되어야 합니다.
             if round(asymptote_x, 2) in drawn_asymptotes or not (x_min_plot <= asymptote_x <= x_max_plot):
                 continue
             
