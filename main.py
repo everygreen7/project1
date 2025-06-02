@@ -1,6 +1,7 @@
 import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker # ticker 모듈 추가
 
 def main():
     st.set_page_config(layout="wide")
@@ -10,7 +11,6 @@ def main():
     # 사이드바 입력 설정
     st.sidebar.header("그래프 설정")
 
-    # st.selectbox 대신 st.radio를 사용하여 버튼 형태로 변경
     function_type = st.sidebar.radio(
         "함수 선택",
         ("sin(x)", "cos(x)", "tan(x)")
@@ -49,7 +49,9 @@ def main():
     )
 
     # X 값 생성 (고정 범위)
-    x = np.linspace(-2 * np.pi, 2 * np.pi, 500)
+    x_min_plot = -2 * np.pi
+    x_max_plot = 2 * np.pi
+    x = np.linspace(x_min_plot, x_max_plot, 500)
     y = np.zeros_like(x)
 
     # 함수 계산
@@ -83,17 +85,73 @@ def main():
     ax.spines['top'].set_visible(False)    # 위쪽 테두리 제거
     ax.spines['right'].set_visible(False)  # 오른쪽 테두리 제거
     ax.set_ylim(-8, 8) # Y축 범위 -8~8로 변경
+    ax.set_xlim(x_min_plot, x_max_plot) # X축 범위 설정
+
+    # X축 눈금을 파이/4의 배수로 설정 및 라디안으로 표기
+    # 파이/4 간격으로 주요 눈금 설정
+    major_locator = ticker.MultipleLocator(np.pi / 4)
+    ax.xaxis.set_major_locator(major_locator)
+
+    # 눈금 라벨 포맷터 정의
+    def format_func(value, tick_pos):
+        if value == 0:
+            return "0"
+        # pi의 배수를 나타내기 위해 value / np.pi를 계산
+        # 분모를 4로 고정하여 pi/4의 배수를 표시
+        num = value / np.pi
+        
+        # 분자와 분모를 정수로 변환 후 최대공약수로 나누어 간단히 표현
+        # 예: 0.5 -> 1/2, 1.0 -> 1, 1.25 -> 5/4
+        
+        # 작은 부동 소수점 오차를 처리하기 위해 반올림
+        num_fraction = num * 4 # pi/4의 배수이므로 4를 곱하여 정수화 시도
+        
+        # 정수로 가장 가까운 값 찾기 (소수점 이하가 .0000000000001 같은 경우)
+        round_num = round(num_fraction) 
+        
+        if abs(num_fraction - round_num) < 1e-9: # 거의 정수인 경우
+            num = round_num / 4.0 # 다시 pi의 배수로 변환
+        
+        
+        if num == 1:
+            return r"$\pi$"
+        elif num == -1:
+            return r"$-\pi$"
+        elif num % 1 == 0: # 정수 파이 (예: 2pi)
+            return r"${}\pi$".format(int(num))
+        else: # 분수 파이 (예: pi/2, 3pi/4)
+            # 분자와 분모를 구하기
+            numerator = int(num * 4) # 예: 0.25 -> 1, 0.5 -> 2, 0.75 -> 3
+            denominator = 4
+            
+            # 최대공약수 구하기
+            gcd_val = np.gcd(numerator, denominator)
+            numerator //= gcd_val
+            denominator //= gcd_val
+            
+            if denominator == 1:
+                return r"${}\pi$".format(numerator)
+            else:
+                if numerator == 1:
+                    return r"$\frac{{\pi}}{{{}}}$".format(denominator)
+                else:
+                    return r"$\frac{{{}}}{{{}}}\pi$".format(numerator, denominator)
+
+    ax.xaxis.set_major_formatter(ticker.FuncFormatter(format_func))
 
     if function_type == "tan(x)":
         # 점근선 표시 (끊어진 선으로 표현)
         cos_val = np.cos(frequency * x + x_shift)
+        
+        # x_val 값 계산을 위해 frequency * x + x_shift 값을 사용
+        tan_x_values = frequency * x + x_shift 
         
         asymptote_indices = np.where(np.isclose(cos_val, 0, atol=tolerance))[0]
         
         drawn_asymptotes = set()
         for i in asymptote_indices:
             asymptote_x = x[i]
-            if round(asymptote_x, 2) in drawn_asymptotes or not (-2 * np.pi <= asymptote_x <= 2 * np.pi):
+            if round(asymptote_x, 2) in drawn_asymptotes or not (x_min_plot <= asymptote_x <= x_max_plot):
                 continue
             
             ax.plot([asymptote_x, asymptote_x], [-8, 8], color='red', linestyle='--', linewidth=1)
