@@ -2,8 +2,6 @@ import streamlit as st
 import random
 
 # --- 1. 퀴즈 문제 데이터 정의 ---
-# 문제, 정답, 오답 보기를 딕셔너리 리스트로 정의합니다.
-# 보기 순서는 매번 랜덤하게 섞이도록 할 것입니다.
 QUIZ_QUESTIONS = [
     {
         "question": "sin(30°)의 값은 무엇인가요?",
@@ -58,6 +56,9 @@ if "show_feedback" not in st.session_state:
     st.session_state.show_feedback = False
 if "user_answer" not in st.session_state:
     st.session_state.user_answer = None
+if "current_options_shuffled" not in st.session_state: # 각 문제의 보기 순서 저장을 위한 상태 추가
+    st.session_state.current_options_shuffled = []
+
 
 # 퀴즈 시작 함수
 def start_quiz():
@@ -65,6 +66,11 @@ def start_quiz():
     st.session_state.current_question_index = 0
     st.session_state.score = 0
     st.session_state.quiz_questions_shuffled = random.sample(QUIZ_QUESTIONS, len(QUIZ_QUESTIONS)) # 문제 순서 섞기
+    
+    # 첫 번째 문제의 보기 순서 저장
+    current_q = st.session_state.quiz_questions_shuffled[st.session_state.current_question_index]
+    st.session_state.current_options_shuffled = random.sample(current_q["options"], len(current_q["options"]))
+
     st.session_state.show_feedback = False
     st.session_state.user_answer = None
 
@@ -76,10 +82,15 @@ def next_question():
 
     if st.session_state.current_question_index < len(st.session_state.quiz_questions_shuffled) - 1:
         st.session_state.current_question_index += 1
+        # 다음 문제의 보기 순서 새로 저장
+        current_q = st.session_state.quiz_questions_shuffled[st.session_state.current_question_index]
+        st.session_state.current_options_shuffled = random.sample(current_q["options"], len(current_q["options"]))
     else:
         # 모든 문제를 다 풀었을 경우 퀴즈 종료
         st.session_state.quiz_started = False
         st.session_state.current_question_index = 0 # 인덱스 초기화
+        st.session_state.quiz_questions_shuffled = [] # 퀴즈 종료 시 문제 목록 초기화
+        st.session_state.current_options_shuffled = [] # 퀴즈 종료 시 보기 목록 초기화
         st.rerun() # 퀴즈 종료 화면으로 리로드
 
 # 답변 제출 함수
@@ -100,10 +111,12 @@ if not st.session_state.quiz_started:
     st.button("퀴즈 시작", on_click=start_quiz)
 
     # 퀴즈가 끝나고 다시 시작할 때 점수 표시
-    if st.session_state.current_question_index == 0 and st.session_state.score > 0:
+    # current_question_index가 0이고, quiz_questions_shuffled가 비어있지 않으며, score가 0보다 클 때만 표시
+    if (st.session_state.current_question_index == 0 and
+        not st.session_state.quiz_questions_shuffled and # 퀴즈 시작 전이거나 종료 후 (비어있음)
+        st.session_state.score > 0): # 이전에 퀴즈를 풀어서 점수가 있을 때
         st.success(f"퀴즈가 종료되었습니다! 총 {len(QUIZ_QUESTIONS)}문제 중 {st.session_state.score}개를 맞혔습니다. 훌륭해요!")
         st.session_state.score = 0 # 점수 초기화
-        st.session_state.quiz_questions_shuffled = [] # 문제 목록 초기화
 
 
 else:
@@ -114,17 +127,22 @@ else:
     st.markdown(f"**{current_q['question']}**")
 
     # 보기를 섞어서 보여줍니다.
-    options_shuffled = random.sample(current_q["options"], len(current_q["options"]))
+    # 이제는 st.session_state에 저장된 순서를 사용합니다.
+    options_to_display = st.session_state.current_options_shuffled
 
     # 라디오 버튼으로 보기 표시
+    # 기본값은 현재 선택된 옵션이거나 None (선택 안 했을 때)
     selected_option = st.radio(
         "정답을 선택하세요:",
-        options_shuffled,
-        key=f"question_{current_q_index}" # 각 문제마다 고유한 키 부여
+        options_to_display,
+        index=options_to_display.index(st.session_state.user_answer) if st.session_state.user_answer in options_to_display else 0, # 이미 선택한 답을 유지
+        key=f"question_radio_{current_q_index}" # 각 문제마다 고유한 키 부여
     )
 
     # 정답 제출 버튼
     if not st.session_state.show_feedback:
+        # st.radio의 반환값이 바로 selected_option에 할당되므로,
+        # 여기서는 단순히 버튼만 생성하고, 선택된 옵션을 submit_answer에 전달합니다.
         st.button("정답 확인", on_click=submit_answer, args=(selected_option,))
     else:
         # 피드백이 보여지고 나면 다음 문제 버튼
