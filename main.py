@@ -96,22 +96,15 @@ def main():
     def format_func(value, tick_pos):
         if value == 0:
             return "0"
-        # pi의 배수를 나타내기 위해 value / np.pi를 계산
-        # 분모를 4로 고정하여 pi/4의 배수를 표시
+        
         num = value / np.pi
         
-        # 분자와 분모를 정수로 변환 후 최대공약수로 나누어 간단히 표현
-        # 예: 0.5 -> 1/2, 1.0 -> 1, 1.25 -> 5/4
-        
         # 작은 부동 소수점 오차를 처리하기 위해 반올림
-        num_fraction = num * 4 # pi/4의 배수이므로 4를 곱하여 정수화 시도
-        
-        # 정수로 가장 가까운 값 찾기 (소수점 이하가 .0000000000001 같은 경우)
+        num_fraction = num * 4 
         round_num = round(num_fraction) 
         
-        if abs(num_fraction - round_num) < 1e-9: # 거의 정수인 경우
-            num = round_num / 4.0 # 다시 pi의 배수로 변환
-        
+        if abs(num_fraction - round_num) < 1e-9: 
+            num = round_num / 4.0 
         
         if num == 1:
             return r"$\pi$"
@@ -120,11 +113,9 @@ def main():
         elif num % 1 == 0: # 정수 파이 (예: 2pi)
             return r"${}\pi$".format(int(num))
         else: # 분수 파이 (예: pi/2, 3pi/4)
-            # 분자와 분모를 구하기
-            numerator = int(num * 4) # 예: 0.25 -> 1, 0.5 -> 2, 0.75 -> 3
+            numerator = int(num * 4) 
             denominator = 4
             
-            # 최대공약수 구하기
             gcd_val = np.gcd(numerator, denominator)
             numerator //= gcd_val
             denominator //= gcd_val
@@ -139,12 +130,17 @@ def main():
 
     ax.xaxis.set_major_formatter(ticker.FuncFormatter(format_func))
 
+    # X축 눈금 라벨 위치 조정
+    # `tick_bottom=False`는 아래쪽 눈금 표시를 없애고
+    # `labelbottom=True`는 아래쪽 라벨을 유지
+    # `pad`를 음수로 설정하여 라벨을 축선(y=0) 가까이로 이동
+    ax.tick_params(axis='x', direction='out', pad=-15,  # pad 값을 조정하여 라벨 위치 조절
+                   labelbottom=True,      # 아래쪽 라벨 표시
+                   tick_bottom=False)     # 아래쪽 눈금 자체는 표시 안 함
+
     if function_type == "tan(x)":
         # 점근선 표시 (끊어진 선으로 표현)
         cos_val = np.cos(frequency * x + x_shift)
-        
-        # x_val 값 계산을 위해 frequency * x + x_shift 값을 사용
-        tan_x_values = frequency * x + x_shift 
         
         asymptote_indices = np.where(np.isclose(cos_val, 0, atol=tolerance))[0]
         
