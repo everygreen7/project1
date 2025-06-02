@@ -2,29 +2,31 @@ import streamlit as st
 import random
 
 # --- 1. 퀴즈 문제 데이터 정의 ---
+# 문제, 정답, 오답 보기를 딕셔너리 리스트로 정의합니다.
+# 보기 순서는 매번 랜덤하게 섞이도록 할 것입니다.
 QUIZ_QUESTIONS = [
     {
-        "question": "sin(30°)의 값은 무엇인가요?",
+        "question": "$\\sin(30^\\circ)$의 값은 무엇인가요?", # LaTeX 적용
         "answer": "1/2",
         "options": ["1/2", "루트3/2", "루트2/2", "0"]
     },
     {
-        "question": "cos(60°)의 값은 무엇인가요?",
+        "question": "$\\cos(60^\\circ)$의 값은 무엇인가요?", # LaTeX 적용
         "answer": "1/2",
         "options": ["1/2", "루트3/2", "루트2/2", "1"]
     },
     {
-        "question": "tan(45°)의 값은 무엇인가요?",
+        "question": "$\\tan(45^\\circ)$의 값은 무엇인가요?", # LaTeX 적용
         "answer": "1",
         "options": ["1", "0", "정의되지 않음", "루트3"]
     },
     {
-        "question": "다음 중 $\\sin^2\\theta + \\cos^2\\theta$ 와 항상 같은 값은 무엇인가요?",
+        "question": "다음 중 $\\sin^2\\theta + \\cos^2\\theta$ 와 항상 같은 값은 무엇인가요?", # LaTeX 적용
         "answer": "1",
         "options": ["1", "0", "tan^2θ", "sec^2θ"]
     },
     {
-        "question": "직각삼각형에서 빗변이 5이고 높이(대변)가 3일 때, 사인(sin) 값은 무엇인가요?",
+        "question": "직각삼각형에서 빗변이 5이고 높이(대변)가 3일 때, $\\sin$ 값은 무엇인가요?", # LaTeX 적용
         "answer": "3/5",
         "options": ["3/5", "4/5", "3/4", "5/3"]
     },
@@ -34,9 +36,24 @@ QUIZ_QUESTIONS = [
         "options": ["2π", "π", "π/2", "4π"]
     },
     {
-        "question": "탄젠트 함수가 정의되지 않는 각도는 무엇인가요? (0° ~ 360° 사이)",
+        "question": "탄젠트 함수가 정의되지 않는 각도는 무엇인가요? ($0^\\circ$ ~ $360^\\circ$ 사이)", # LaTeX 적용
         "answer": "90°",
         "options": ["90°", "180°", "270°", "0°"]
+    },
+    {
+        "question": "$y = \\sin(x)$ 그래프의 최댓값은 무엇인가요?",
+        "answer": "1",
+        "options": ["1", "0", "-1", "2"]
+    },
+    {
+        "question": "$\\tan \\theta = \\frac{\\sin \\theta}{\\cos \\theta}$ 는 어떤 관계를 나타내나요?",
+        "answer": "탄젠트의 정의",
+        "options": ["탄젠트의 정의", "사인 함수의 정의", "코사인 함수의 정의", "피타고라스 정리"]
+    },
+    {
+        "question": "각도 $A$에 대해 $\\sec A$는 무엇의 역수인가요?",
+        "answer": "cos A",
+        "options": ["sin A", "cos A", "tan A", "cot A"]
     }
 ]
 
@@ -56,7 +73,7 @@ if "show_feedback" not in st.session_state:
     st.session_state.show_feedback = False
 if "user_answer" not in st.session_state:
     st.session_state.user_answer = None
-if "current_options_shuffled" not in st.session_state: # 각 문제의 보기 순서 저장을 위한 상태 추가
+if "current_options_shuffled" not in st.session_state:
     st.session_state.current_options_shuffled = []
 
 
@@ -111,12 +128,11 @@ if not st.session_state.quiz_started:
     st.button("퀴즈 시작", on_click=start_quiz)
 
     # 퀴즈가 끝나고 다시 시작할 때 점수 표시
-    # current_question_index가 0이고, quiz_questions_shuffled가 비어있지 않으며, score가 0보다 클 때만 표시
     if (st.session_state.current_question_index == 0 and
-        not st.session_state.quiz_questions_shuffled and # 퀴즈 시작 전이거나 종료 후 (비어있음)
-        st.session_state.score > 0): # 이전에 퀴즈를 풀어서 점수가 있을 때
+        not st.session_state.quiz_questions_shuffled and
+        st.session_state.score > 0):
         st.success(f"퀴즈가 종료되었습니다! 총 {len(QUIZ_QUESTIONS)}문제 중 {st.session_state.score}개를 맞혔습니다. 훌륭해요!")
-        st.session_state.score = 0 # 점수 초기화
+        st.session_state.score = 0
 
 
 else:
@@ -124,32 +140,29 @@ else:
     current_q = st.session_state.quiz_questions_shuffled[current_q_index]
 
     st.subheader(f"문제 {current_q_index + 1} / {len(QUIZ_QUESTIONS)}")
-    st.markdown(f"**{current_q['question']}**")
+    # st.markdown()을 사용하여 LaTeX 수식을 렌더링합니다.
+    # r"..." (원시 문자열)을 사용하여 백슬래시 문제를 방지합니다.
+    st.markdown(r"**" + current_q["question"] + r"**")
 
     # 보기를 섞어서 보여줍니다.
-    # 이제는 st.session_state에 저장된 순서를 사용합니다.
     options_to_display = st.session_state.current_options_shuffled
 
     # 라디오 버튼으로 보기 표시
-    # 기본값은 현재 선택된 옵션이거나 None (선택 안 했을 때)
     selected_option = st.radio(
         "정답을 선택하세요:",
         options_to_display,
-        index=options_to_display.index(st.session_state.user_answer) if st.session_state.user_answer in options_to_display else 0, # 이미 선택한 답을 유지
-        key=f"question_radio_{current_q_index}" # 각 문제마다 고유한 키 부여
+        index=options_to_display.index(st.session_state.user_answer) if st.session_state.user_answer in options_to_display else 0,
+        key=f"question_radio_{current_q_index}"
     )
 
     # 정답 제출 버튼
     if not st.session_state.show_feedback:
-        # st.radio의 반환값이 바로 selected_option에 할당되므로,
-        # 여기서는 단순히 버튼만 생성하고, 선택된 옵션을 submit_answer에 전달합니다.
         st.button("정답 확인", on_click=submit_answer, args=(selected_option,))
     else:
-        # 피드백이 보여지고 나면 다음 문제 버튼
         if st.session_state.current_question_index < len(st.session_state.quiz_questions_shuffled) - 1:
             st.button("다음 문제", on_click=next_question)
         else:
-            st.button("퀴즈 종료", on_click=next_question) # 마지막 문제 후 퀴즈 종료 버튼
+            st.button("퀴즈 종료", on_click=next_question)
 
     st.markdown(f"---")
     st.write(f"현재 점수: {st.session_state.score} / {current_q_index + 1}")
